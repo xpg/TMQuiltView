@@ -22,7 +22,7 @@
 
 #import "TMPhotoQuiltViewCell.h"
 
-const NSInteger kNumberOfCells = 1000;
+const NSInteger kNumberOfCells = 100;
 
 @interface TMDemoQuiltViewController ()
 
@@ -96,14 +96,14 @@ const NSInteger kNumberOfCells = 1000;
     
     if ([[UIDevice currentDevice] orientation] == UIDeviceOrientationLandscapeLeft 
         || [[UIDevice currentDevice] orientation] == UIDeviceOrientationLandscapeRight) {
-        return 3;
+        return 2;
     } else {
         return 2;
     }
 }
 
-- (CGFloat)quiltView:(TMQuiltView *)quiltView heightForCellAtIndexPath:(NSIndexPath *)indexPath {
-    return [self imageAtIndexPath:indexPath].size.height / [self quiltViewNumberOfColumns:quiltView];
+- (CGFloat)quiltView:(TMQuiltView *)quiltView widthForCellAtIndexPath:(NSIndexPath *)indexPath {
+    return [self imageAtIndexPath:indexPath].size.width * ([self.quiltView cellHeight] / [self imageAtIndexPath:indexPath].size.height);
 }
 
 @end

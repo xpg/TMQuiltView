@@ -21,7 +21,7 @@
 #import "TMQuiltViewCell.h"
 
 const NSInteger kTMQuiltViewDefaultColumns = 2;
-const CGFloat kTMQuiltViewDefaultMargin = 10.0f;
+const CGFloat kTMQuiltViewDefaultMargin = 5.0f;
 const CGFloat kTMQuiltViewDefaultCellHeight = 50.0f;
 
 NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdentifier";
@@ -34,9 +34,9 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
 @property (nonatomic, assign) NSInteger numberOfColumms;
 
 @property (nonatomic, readonly) NSMutableArray **indexPathsByColumn;
-@property (nonatomic, readonly) NSMutableArray **cellTopByColumn;
-@property (nonatomic, readonly) int *topByColumn;
-@property (nonatomic, readonly) int *bottomByColumn;
+@property (nonatomic, readonly) NSMutableArray **cellLeftByColumn;
+@property (nonatomic, readonly) int *leftByColumn;
+@property (nonatomic, readonly) int *rightByColumn;
 @property (nonatomic, readonly) NSMutableDictionary **indexPathToViewByColumn;
 
 @property (nonatomic, retain) NSMutableSet *rowsToInsert;
@@ -63,9 +63,9 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
 @synthesize numberOfColumms = _numberOfColumms;
 
 @synthesize indexPathsByColumn = _indexPathsByColumn;
-@synthesize cellTopByColumn = _cellTopByColumn;
-@synthesize topByColumn = _topByColumn;
-@synthesize bottomByColumn = _bottomByColumn;
+@synthesize cellLeftByColumn = _cellLeftByColumn;
+@synthesize leftByColumn = _leftByColumn;
+@synthesize rightByColumn = _rightByColumn;
 @synthesize indexPathToViewByColumn = _indexPathToViewByColumn;
 
 @synthesize rowsToDelete = _rowsToDelete;
@@ -93,21 +93,21 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
     [self recycleViews];
     for (int i = 0; i < _numberOfColumms; i++) {
         [self.indexPathsByColumn[i] release], self.indexPathsByColumn[i] = nil;
-        [self.cellTopByColumn[i] release], self.cellTopByColumn[i] = nil;
+        [self.cellLeftByColumn[i] release], self.cellLeftByColumn[i] = nil;
         [self.indexPathToViewByColumn[i] release], self.indexPathToViewByColumn[i] = nil;
     }
     free(_indexPathsByColumn), _indexPathsByColumn = nil;
-    free(_cellTopByColumn), _cellTopByColumn = nil;
+    free(_cellLeftByColumn), _cellLeftByColumn = nil;
     free(_indexPathToViewByColumn), _indexPathToViewByColumn = nil;
     
-    free(_topByColumn), _topByColumn = nil;
-    free(_bottomByColumn), _bottomByColumn = nil;
+    free(_leftByColumn), _leftByColumn = nil;
+    free(_rightByColumn), _rightByColumn = nil;
 }
 
 - (void)recycleViews {
     for (int i = 0; i < _numberOfColumms; i++) {
-        self.topByColumn[i] = -1;
-        self.bottomByColumn[i] = -1;
+        self.leftByColumn[i] = -1;
+        self.rightByColumn[i] = -1;
         for (NSIndexPath *indexPath in [self.indexPathToViewByColumn[i] allKeys]) { 
             TMQuiltViewCell *view = [self.indexPathToViewByColumn[i] objectForKey:indexPath];
             [self.indexPathToViewByColumn[i] removeObjectForKey:indexPath];
@@ -123,7 +123,7 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
 {
     self = [super initWithFrame:frame];
     if (self) {
-        super.alwaysBounceVertical = YES;
+//        super.alwaysBounceHorizontal = YES;
         [self addGestureRecognizer:self.tapGestureRecognizer];
         _numberOfColumms = kTMQuiltViewDefaultColumns;
     }
@@ -172,14 +172,14 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
     return _indexPathsByColumn;
 }
 
-- (NSMutableArray **)cellTopByColumn {
-    if (!_cellTopByColumn) {
-        _cellTopByColumn = malloc(sizeof(NSMutableArray*) * _numberOfColumms);
+- (NSMutableArray **)cellLeftByColumn {
+    if (!_cellLeftByColumn) {
+        _cellLeftByColumn = malloc(sizeof(NSMutableArray*) * _numberOfColumms);
         for (int i = 0; i < _numberOfColumms; i++) {
-            _cellTopByColumn[i] = [[NSMutableArray alloc] init];
+            _cellLeftByColumn[i] = [[NSMutableArray alloc] init];
         }
     }
-    return _cellTopByColumn;
+    return _cellLeftByColumn;
 }
 
 - (NSMutableDictionary **)indexPathToViewByColumn {
@@ -192,18 +192,18 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
     return _indexPathToViewByColumn;
 }
 
-- (int *)topByColumn {
-    if (!_topByColumn) {
-        _topByColumn = malloc(sizeof(int) * _numberOfColumms);
+- (int *)leftByColumn {
+    if (!_leftByColumn) {
+        _leftByColumn = malloc(sizeof(int) * _numberOfColumms);
     }
-    return _topByColumn;
+    return _leftByColumn;
 }
 
-- (int *)bottomByColumn {
-    if (!_bottomByColumn) {
-        _bottomByColumn = malloc(sizeof(int) * _numberOfColumms);
+- (int *)rightByColumn {
+    if (!_rightByColumn) {
+        _rightByColumn = malloc(sizeof(int) * _numberOfColumms);
     }
-    return _bottomByColumn;
+    return _rightByColumn;
 }
 
 - (NSInteger)numberOfCells {
@@ -313,46 +313,46 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
     
     // -----
     
-    float heights[_numberOfColumms];
+    float widths[_numberOfColumms];
     for (int i = 0; i < _numberOfColumms; i++) {
-        heights[i] = 0.0;
+        widths[i] = 0.0;
     }
     
     for (int i = 0; i < _numberOfColumms; i++) {
         [self.indexPathsByColumn[i] removeAllObjects];
-        [self.cellTopByColumn[i] removeAllObjects];
+        [self.cellLeftByColumn[i] removeAllObjects];
     }
     
     // Calculate every cells rect, as well as the total height for the quilt
     for (NSIndexPath *indexPath in [[self.indexPaths allObjects] sortedArrayUsingSelector:@selector(compare:)]) {
         int shortestColumn = 0;
-        int shortestHeight = heights[0];
+        int shortestWidth = widths[0];
         
         for (int i = 1; i < _numberOfColumms; i++) {
-            if (heights[i] < shortestHeight) {
+            if (widths[i] < shortestWidth) {
                 shortestColumn = i;
-                shortestHeight = heights[i];
+                shortestWidth = widths[i];
             }
         }
         
-        float height = [self heightForCellAtIndexPath:indexPath];
-        CGFloat cellTop = shortestHeight + [self cellMargin:TMQuiltViewCellMarginTop];
+        float width = [self widthForCellAtIndexPath:indexPath];
+        CGFloat cellLeft = shortestWidth + [self cellMargin:TMQuiltViewCellMarginLeft];
         
         [self.indexPathsByColumn[shortestColumn] addObject:indexPath];
-        [self.cellTopByColumn[shortestColumn] addObject:[NSNumber numberWithInt:cellTop]];
+        [self.cellLeftByColumn[shortestColumn] addObject:[NSNumber numberWithInt:cellLeft]];
         
-        heights[shortestColumn] += height + [self cellMargin:TMQuiltViewCellMarginRows];
+        widths[shortestColumn] += width + [self cellMargin:TMQuiltViewCellMarginRows];
     }
     
-    int tallestHeight = heights[0];
+    int tallestWidth = widths[0];
     
     for (int i = 1; i < _numberOfColumms; i++) {
-        if (heights[i] > tallestHeight) {
-            tallestHeight = heights[i];
+        if (widths[i] > tallestWidth) {
+            tallestWidth = widths[i];
         }
     }
     
-    self.contentSize = CGSizeMake(self.bounds.size.width, tallestHeight + [self cellMargin:TMQuiltViewCellMarginBottom]);
+    self.contentSize = CGSizeMake(tallestWidth + [self cellMargin:TMQuiltViewCellMarginRight], self.bounds.size.height);
 
     //
     [self recycleViews];
@@ -362,10 +362,10 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
 
 #pragma mark - Layout
 
-- (CGFloat)heightForCellAtIndexPath:(NSIndexPath *)indexPath {
+- (CGFloat)widthForCellAtIndexPath:(NSIndexPath *)indexPath {
     
-    if ([self.delegate respondsToSelector:@selector(quiltView:heightForCellAtIndexPath:)]) {
-        return [self.delegate quiltView:self heightForCellAtIndexPath:indexPath];
+    if ([self.delegate respondsToSelector:@selector(quiltView:widthForCellAtIndexPath:)]) {
+        return [self.delegate quiltView:self widthForCellAtIndexPath:indexPath];
     }
     
     return kTMQuiltViewDefaultCellHeight;
@@ -378,35 +378,35 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
     return kTMQuiltViewDefaultMargin;
 }
 
-- (CGFloat)cellWidth {
-    CGFloat cellWidth = (self.bounds.size.width 
-                         - [self cellMargin:TMQuiltViewCellMarginLeft] 
+- (CGFloat)cellHeight {
+    CGFloat cellWidth = (self.bounds.size.height - kTMQuiltViewDefaultMargin * 3
+                         /* - [self cellMargin:TMQuiltViewCellMarginLeft]
                          - [self cellMargin:TMQuiltViewCellMarginColumns] * (_numberOfColumms - 1) 
-                         - [self cellMargin:TMQuiltViewCellMarginRight]
+                         - [self cellMargin:TMQuiltViewCellMarginRight]*/
                          ) / _numberOfColumms;
     return cellWidth;
 }
 
 - (CGRect)rectForCellAtIndex:(int)index column:(int)column {
     
-    NSInteger cellTop = [[self.cellTopByColumn[column] objectAtIndex:index] floatValue];
-    float height = [self heightForCellAtIndexPath:[self.indexPathsByColumn[column] objectAtIndex:index]];
+    NSInteger cellLeft = [[self.cellLeftByColumn[column] objectAtIndex:index] floatValue];
+    float width = [self widthForCellAtIndexPath:[self.indexPathsByColumn[column] objectAtIndex:index]];
 
-    return CGRectMake(column * ([self cellWidth] + [self cellMargin:TMQuiltViewCellMarginColumns]) + [self cellMargin:TMQuiltViewCellMarginLeft],
-                             cellTop,
-                             [self cellWidth], height);
+    CGRect rect = CGRectMake(cellLeft, column * ([self cellHeight] + [self cellMargin:TMQuiltViewCellMarginColumns]) + [self cellMargin:TMQuiltViewCellMarginLeft],
+                             width, [self cellHeight]);
+    
+//    NSLog(@"contentSize:%f-%f, rect x:%f, y:%f width: %f height: %f", self.contentSize.width, self.contentSize.height, rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
+    return rect;
 }
 
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    self.contentSize = CGSizeMake(self.bounds.size.width, self.contentSize.height);
-    
     for (int i = 0; i < _numberOfColumms; i++) {
         NSArray *indexPaths = self.indexPathsByColumn[i];
         NSMutableDictionary *indexPathToView = self.indexPathToViewByColumn[i];
-        int *top = &self.topByColumn[i];
-        int *bottom = &self.bottomByColumn[i];
+        int *left = &self.leftByColumn[i];
+        int *right = &self.rightByColumn[i];
         
         // Skip this column if it has no cells
         if ([indexPaths count] == 0) {
@@ -414,7 +414,7 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
         }
         
         // Create the top cells if they don't exist yet.
-        if (*top == -1 && *bottom == -1) {
+        if (*left == -1 && *right == -1) {
             if ([self.indexPathsByColumn[i] count] > 0) {
                 NSIndexPath* indexPath = [self.indexPathsByColumn[i] objectAtIndex:0];
             
@@ -423,8 +423,8 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
                 [self.indexPathToViewByColumn[i] setObject:newCell forKey:indexPath];
                 [self addSubview:newCell];
                 [[self reusableViewsWithReuseIdentifier:newCell.reuseIdentifier] removeObject:newCell];
-                *top = 0;
-                *bottom = 0;
+                *left = 0;
+                *right = 0;
             } else {
                 break;
             }
@@ -432,35 +432,35 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
         
         
         
-        for(int j = *top; j <= *bottom; j++) {
+        for(int j = *left; j <= *right; j++) {
             TMQuiltViewCell *visibleCell = (TMQuiltViewCell *)[indexPathToView objectForKey:[indexPaths objectAtIndex:j]];
             visibleCell.frame = [self rectForCellAtIndex:j column:i];
         }
         
         // Add a new cell to the bottom if our bottom cell is above the bottom of the visible area (and not the last cell)
-        while ((*bottom < [indexPaths count] - 1) && [TMQuiltView isRect:[self rectForCellAtIndex:*bottom column:i] entirelyInOrAboveScrollView:self]) {
+        while ((*right < [indexPaths count] - 1) && [TMQuiltView isRect:[self rectForCellAtIndex:*right column:i] entirelyInOrAboveScrollView:self]) {
             
-            if ([TMQuiltView isRect:[self rectForCellAtIndex:*bottom + 1 column:i] partiallyInScrollView:self]) {
-                NSIndexPath *newIndexPath = [indexPaths objectAtIndex:*bottom + 1];
+            if ([TMQuiltView isRect:[self rectForCellAtIndex:*right + 1 column:i] partiallyInScrollView:self]) {
+                NSIndexPath *newIndexPath = [indexPaths objectAtIndex:*right + 1];
                 UIView* newCell = [self.dataSource quiltView:self cellAtIndexPath:newIndexPath];
                 [self addSubview:newCell];
-                newCell.frame = [self rectForCellAtIndex:*bottom + 1 column:i];
+                newCell.frame = [self rectForCellAtIndex:*right + 1 column:i];
                 [indexPathToView setObject:newCell forKey:newIndexPath];
             }
-            (*bottom)++;
+            (*right)++;
         }
         
         
         // Add a new cell to the top if our top cell is below the top of the visible area (and not the first cell)
-        while ((*top > 0) && [TMQuiltView isRect:[self rectForCellAtIndex:*top column:i] entirelyInOrBelowScrollView:self]) {
-            if ([TMQuiltView isRect:[self rectForCellAtIndex:*top - 1 column:i] partiallyInScrollView:self]) {
-                NSIndexPath *newIndexPath = [indexPaths objectAtIndex:*top - 1];
+        while ((*left > 0) && [TMQuiltView isRect:[self rectForCellAtIndex:*left column:i] entirelyInOrBelowScrollView:self]) {
+            if ([TMQuiltView isRect:[self rectForCellAtIndex:*left - 1 column:i] partiallyInScrollView:self]) {
+                NSIndexPath *newIndexPath = [indexPaths objectAtIndex:*left - 1];
                 TMQuiltViewCell* newCell = [self.dataSource quiltView:self cellAtIndexPath:newIndexPath];
-                newCell.frame = [self rectForCellAtIndex:*top - 1 column:i];
+                newCell.frame = [self rectForCellAtIndex:*left - 1 column:i];
                 [indexPathToView setObject:newCell forKey:newIndexPath];
                 [self addSubview:newCell];
             }
-            (*top)--;
+            (*left)--;
         }
         
         // Harvest any any views that have moved off screen and add them to the reuse pool
@@ -482,18 +482,19 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
         // Move top and bottom if the cells they point to were harvested
         for (int j = 0; j < [indexPaths count]; j++) {
             if ([indexPathToView objectForKey:[indexPaths objectAtIndex:j]] != nil) {
-                *top = j;
+                *left = j;
                 break;
             }
         }
         
         for (int j = [indexPaths count] - 1; j >= 0; j--) {
             if ([indexPathToView objectForKey:[indexPaths objectAtIndex:j]] != nil) {
-                *bottom = j;
+                *right = j;
                 break;
             }
         }
     }
+//        NSLog(@"layout contentSize:%f-%f", self.contentSize.width, self.contentSize.height);
 }
 
 - (void)setFrame:(CGRect)frame {
@@ -521,24 +522,24 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
 }
 
 + (BOOL)isRect:(CGRect)rect entirelyInOrAboveScrollView:(UIScrollView *)scrollView {
-    int scrollViewBottom = scrollView.contentOffset.y + scrollView.bounds.size.height;
-    int rectBottom = rect.origin.y + rect.size.height;
+    int scrollViewBottom = scrollView.contentOffset.x + scrollView.bounds.size.width;
+    int rectBottom = rect.origin.x + rect.size.width;
     
     return (rectBottom < scrollViewBottom) ? YES : NO;
 }
 
 + (BOOL)isRect:(CGRect)rect entirelyInOrBelowScrollView:(UIScrollView *)scrollView {
-    int scrollViewTop = scrollView.contentOffset.y;
-    int rectTop = rect.origin.y;
+    int scrollViewTop = scrollView.contentOffset.x;
+    int rectTop = rect.origin.x;
     
     return (rectTop > scrollViewTop) ? YES : NO;
 }
 
 + (BOOL)isRect:(CGRect)rect partiallyInScrollView:(UIScrollView *)scrollView {
-    int scrollViewTop = scrollView.contentOffset.y;
-    int scrollViewBottom = scrollViewTop + scrollView.bounds.size.height;
-    int rectTop = rect.origin.y;
-    int rectBottom = rectTop + rect.size.height;
+    int scrollViewTop = scrollView.contentOffset.x;
+    int scrollViewBottom = scrollViewTop + scrollView.bounds.size.width;
+    int rectTop = rect.origin.x;
+    int rectBottom = rectTop + rect.size.width;
     
     return (rectTop > scrollViewBottom || rectBottom < scrollViewTop) ? NO : YES;
 }

@@ -51,7 +51,7 @@ typedef enum {
 - (CGFloat)quiltViewMargin:(TMQuiltView *)quilView marginType:(TMQuiltViewMarginType)marginType;
 
 // Must return the height of the requested cell
-- (CGFloat)quiltView:(TMQuiltView *)quiltView heightForCellAtIndexPath:(NSIndexPath *)indexPath;
+- (CGFloat)quiltView:(TMQuiltView *)quiltView widthForCellAtIndexPath:(NSIndexPath *)indexPath;
 
 @end
 
@@ -81,10 +81,10 @@ typedef enum {
 - (void)moveCellAtIndexPath:(NSIndexPath *)indexPath toIndexPath:(NSIndexPath *)newIndexPath;
 
 // Returns the height of a cell
-- (CGFloat)heightForCellAtIndexPath:(NSIndexPath *)indexPath;
+- (CGFloat)widthForCellAtIndexPath:(NSIndexPath *)indexPath;
 
 // Returns the width of a cell
-- (CGFloat)cellWidth;
+- (CGFloat)cellHeight;
 
 // Returns the number of cells in the quilt
 - (NSInteger)numberOfCells;

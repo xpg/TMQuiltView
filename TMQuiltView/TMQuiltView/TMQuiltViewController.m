@@ -59,7 +59,17 @@
 }
 
 - (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
+    NSLog(@"willRotate width:%f, height:%f", self.quiltView.bounds.size.width, self.quiltView.bounds.size.height);
+}
+
+- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
+    [UIView beginAnimations:nil context:nil];
+    [UIView setAnimationBeginsFromCurrentState:YES];
+
     [self.quiltView reloadData];
+
+    [UIView commitAnimations];
+    NSLog(@"didRotate width:%f, height:%f", self.quiltView.bounds.size.width, self.quiltView.bounds.size.height);
 }
 
 #pragma mark - TMQuiltViewDataSource
