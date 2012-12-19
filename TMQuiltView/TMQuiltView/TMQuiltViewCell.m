@@ -39,4 +39,7 @@
     return self;
 }
 
+- (void)prepareForReuse {
+    // No-Op
+}
 @end

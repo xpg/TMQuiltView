@@ -25,5 +25,6 @@
 @property (nonatomic, assign) BOOL selected;
 
 - (id)initWithReuseIdentifier:(NSString *)reuseIdentifier;
+- (void)prepareForReuse;
 
 @end

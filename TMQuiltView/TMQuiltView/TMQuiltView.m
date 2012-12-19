@@ -111,6 +111,7 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
         for (NSIndexPath *indexPath in [self.indexPathToViewByColumn[i] allKeys]) { 
             TMQuiltViewCell *view = [self.indexPathToViewByColumn[i] objectForKey:indexPath];
             [self.indexPathToViewByColumn[i] removeObjectForKey:indexPath];
+            [view prepareForReuse];
             [[self reusableViewsWithReuseIdentifier:view.reuseIdentifier] addObject:view];
             [view removeFromSuperview];
         }
@@ -470,6 +471,7 @@ NSString *const kDefaultReusableIdentifier = @"kTMQuiltViewDefaultReusableIdenti
                 [indexPathToView removeObjectForKey:indexPath];
                 // Limit the size on the reuse pool
                 if ([[self reusableViewsWithReuseIdentifier:view.reuseIdentifier] count] < 10) {
+                    [view prepareForReuse];
                     [[self reusableViewsWithReuseIdentifier:view.reuseIdentifier] addObject:view];
                 }
                 
